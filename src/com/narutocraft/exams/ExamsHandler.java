@@ -31,15 +31,16 @@ import com.narutocraft.teams.TeamsHandler;
 
 public class ExamsHandler implements Listener {
 	
-	public static List<String> members = new ArrayList<String>();
-	public static List<String> winners = new ArrayList<String>();
-	public static List<String> losers = new ArrayList<String>();
-	public static List<String> leaders = new ArrayList<String>(); // СДЕЛАТЬ ПРОВЕРКИ НА КОЛВА ИГРОКОВ
+	public List<String> members = new ArrayList<String>();
+	public List<String> winners = new ArrayList<String>();
+	public List<String> losers = new ArrayList<String>();
+	public List<String> leaders = new ArrayList<String>(); // СДЕЛАТЬ ПРОВЕРКИ НА КОЛВА ИГРОКОВ 
 	
-	private int currentStage = 0;
-	private String currentExam = "";
+	public int currentStage = 0;
+	public String currentExam = "";
+	public boolean canStart = true;
 	
-	private Map<String, String> answer = new HashMap<String, String>();
+	public Map<String, String> answer = new HashMap<String, String>();
 	
 	public static File file;
 	public static FileConfiguration config;
@@ -74,7 +75,25 @@ public class ExamsHandler implements Listener {
 		else config = YamlConfiguration.loadConfiguration(file);	
 	}
 	
+	public void setStage(int stage) 
+	{
+		this.currentStage = stage;
+	}
 	
+	public int getStage() 
+	{
+		return currentStage;
+	}
+	
+	public void setExam(String exam) 
+	{
+		this.currentExam = exam;
+	}
+	
+	public String getExam() 
+	{
+		return currentExam;
+	}
 	
 	public List<String> getMembers() 
 	{
@@ -167,26 +186,6 @@ public class ExamsHandler implements Listener {
 	public String getAnswer(String nick) 
 	{
 		return answer.get(nick);
-	}
-	
-	public void setStage(int stage) 
-	{
-		currentStage = stage;
-	}
-	
-	public int getStage() 
-	{
-		return currentStage;
-	}
-	
-	public void setExam(String exam) 
-	{
-		currentExam = exam;
-	}
-	
-	public String getExam() 
-	{
-		return currentExam;
 	}
 	
 	public List<String> getTeam(String nick)
@@ -314,6 +313,12 @@ public class ExamsHandler implements Listener {
 			player.sendMessage(message);
 	}
 	
+	public void messageForFew(String[] list, String message) 
+	{
+		for(String nick : list)
+			Bukkit.getPlayer(nick).sendMessage(message);		
+	}
+	
 	public void message(String nick, String message) 
 	{
 		Bukkit.getPlayer(nick).sendMessage(message);
@@ -332,7 +337,7 @@ public class ExamsHandler implements Listener {
 		
 		if(player instanceof Player) 
 		{
-			if(currentStage == 1 || currentStage == 2) 
+			if(getStage() == 1 || getStage() == 2) 
 			{
 				if(members.contains(nick)) 
 				{
@@ -344,7 +349,7 @@ public class ExamsHandler implements Listener {
 						{
 							for(ItemStack is : teammate.getInventory()) 
 							{
-								if(is.getType() == Material.BOOK || is.getType() == Material.PAPER) 
+								if(is.getType().equals(Material.BOOK) || is.getType().equals(Material.PAPER)) 
 								{
 									teammate.getWorld().dropItem(teammate.getLocation(), is);
 									teammate.getInventory().removeItem(is);
@@ -357,14 +362,14 @@ public class ExamsHandler implements Listener {
 					}
 				}
 			}
-			else if(currentStage == 3) 
+			else if(getStage() == 3) 
 			{
-				if(chunins.opponents[1] == nick) 
+				if(chunins.opponents[1].equals(nick)) 
 				{
 					addWinner(chunins.opponents[0]);
 					addLoser(chunins.opponents[1]);
 				}
-				else if(chunins.opponents[0] == nick) 
+				else if(chunins.opponents[0].equals(nick)) 
 				{
 					addWinner(chunins.opponents[1]);
 					addLoser(chunins.opponents[0]);
@@ -383,9 +388,9 @@ public class ExamsHandler implements Listener {
 		String nick = player.getName();
 		Action action = event.getAction();
 		
-		if(action == Action.RIGHT_CLICK_AIR ||action == Action.RIGHT_CLICK_BLOCK) 
+		if(action.equals(Action.RIGHT_CLICK_AIR) ||action.equals(Action.RIGHT_CLICK_BLOCK))
 		{
-			if(members.contains(nick) && player.getItemInHand().getType() == Material.BOOK || player.getItemInHand().getType() == Material.PAPER) 
+			if(members.contains(nick) && player.getItemInHand().getType().equals(Material.BOOK) || player.getItemInHand().getType().equals(Material.PAPER)) 
 			{ 
 				/*if(willTeamDie(nick))
 				{
@@ -424,7 +429,7 @@ public class ExamsHandler implements Listener {
 	public void playerChatin(AsyncPlayerChatEvent event) 
 	{
 		Player player = event.getPlayer();
-		if(currentStage == 1 && members.contains(player.getName())) 
+		if(getStage() == 1 && members.contains(player.getName())) 
 		{
 		    System.out.println(event.getMessage());
 		    player.sendMessage(ChatColor.RED + "[Экзамен] Тихо! А если экзаменатор услышит?");
@@ -435,9 +440,9 @@ public class ExamsHandler implements Listener {
 	@EventHandler
 	public void scrollDroppin(PlayerDropItemEvent event) 
 	{
-		if(getStage() == 2 && getExam() == "chunin") 
+		if(getStage() == 2 && getExam().equals("chunin")) 
 		{
-	        if(event.getItemDrop().getItemStack().getType() == Material.PAPER || event.getItemDrop().getItemStack().getType() == Material.BOOK) 
+	        if(event.getItemDrop().getItemStack().getType().equals(Material.PAPER) || event.getItemDrop().getItemStack().getType().equals(Material.BOOK)) 
 	            event.setCancelled(true);
 		}
 	}
@@ -455,24 +460,22 @@ public class ExamsHandler implements Listener {
 	@EventHandler
 	public void playerQuitin(PlayerQuitEvent event) throws IOException 
 	{
-		if(getStage() != 0) 
+		Player player = event.getPlayer();
+		String nick = player.getName();
+		
+		if(getMembers().contains(nick)) 
 		{
-			Player player = event.getPlayer();
-			String nick = player.getName();
-			if(getMembers().contains(nick)) 
-			{
-				player.setHealth(0.0D);
-			}
-			else if(chunins.opponents[0] == nick) 
-			{			
-				player.setHealth(0.0D);
-				chunins.opponents[0] = "";
-			}
-			else if(chunins.opponents[1] == nick)
-			{
-				player.setHealth(0.0D);
-				chunins.opponents[1] = "";
-			}
+			player.setHealth(0.0D);
+		}
+		else if(chunins.opponents[0].equals(nick)) 
+		{			
+			player.setHealth(0.0D);
+			chunins.opponents[0] = "";
+		}
+		else if(chunins.opponents[1].equals(nick))
+		{
+			player.setHealth(0.0D);
+			chunins.opponents[1] = "";
 		}
 	}
 }

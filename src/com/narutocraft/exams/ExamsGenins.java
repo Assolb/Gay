@@ -2,8 +2,6 @@ package com.narutocraft.exams;
 
 public class ExamsGenins {
 	
-	public static ExamsGenins examsGenins =  new ExamsGenins();
-	
 	public void startinGeninExam() 
 	{
 		

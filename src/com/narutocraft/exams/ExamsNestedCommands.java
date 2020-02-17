@@ -9,115 +9,129 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import com.narutocraft.main.NarutoCraft1;
 import com.narutocraft.teams.TeamsHandler;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 
 public class ExamsNestedCommands {	
 	
-	public static boolean canStart = true;
-	public static ExamsChunins chunins;
-	public static ExamsGenins genins = new ExamsGenins();
-	public static ExamsHandler handler = new ExamsHandler();
+	static ExamsHandler handler = new ExamsHandler();
+	static ExamsChunins chunins = new ExamsChunins();
+	static ExamsGenins genins = new ExamsGenins();
+	
+	private static void setDefaults() 
+	{
+		handler.setStage(0);
+		handler.setExam("");
+		handler.getMembers().clear();
+		handler.getLeaders().clear();
+		handler.canStart = true;
+	}
 
 	@Command(aliases = { "start" }, desc = "startin exam", usage = "<exam> - startin the exam <exam>", min = 1) // описание изменить
 	public static void startinExam(CommandContext args, CommandSender sender)
 	{
-		chunins = new ExamsChunins();
-		Player player = (Player)sender;
-		if(!canStart) 
+		Player player = (Player) sender;		
+		
+		if(handler.canStart == false) 
 		{
 			player.sendMessage(ChatColor.RED + "[Exams][ERROR] Вы не можете начать экзамен сейчас!");
 			return;
+		}	
+		
+		switch(args.getString(0)) 
+		{
+		case "genin":
+			handler.canStart = false;
+			handler.setExam("genin");
+			break;
+		case "chunin":
+			handler.canStart = false;
+			handler.setExam("chunin");
+			break;
+		default: 
+			player.sendMessage(ChatColor.RED + "[Exams][ERROR] Введите команду по шаблону: /exams start <chunin/genin>");
+			return;
+		}
+		notifications();
+		countdown();
+	}
+	
+	private static void notifications() 
+	{
+		if(handler.getExam().equals("chunin")) 
+		{
+			handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] Экзамен на ранг Чунин скоро начнется!");
+		}
+		else if(handler.getExam().equals("genin"))
+		{
+			handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] Экзамен на ранг Генин скоро начнется!");
 		}
 		
-		if(handler.getStage() == 0 && handler.getExam() == "") 
-		{
-			switch(args.getString(0)) 
-			{
-			case "genin":
-				examNotification("Генин");
-				handler.setExam("genin");
-				canStart = false;
-				countd();
-				break;
-			case "chunin":
-				examNotification("Чунин");
-				handler.setExam("chunin");
-				canStart = false;
-				countd();
-				break;
-			default:
-				player.sendMessage(ChatColor.RED + "[Exams][ERROR] Введите команду по шаблону: /exams start <chunin/genin>");
-				break;
-			}
-		}
-	}
-	
-	private static void examNotification(String examType) 
-	{
-		handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] Экзамен на ранг " + examType + " скоро начнется!");
 		handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] У вас 20 минут на регистрацию");
-		handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] (для регистрации введите: /exams register " + handler.getExam());
+		handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] (для регистрации введите: /exams register");
 	}
 	
-	private static void countd() 
+	private static void countdown() 
 	{
-	    Thread cd = new Thread()
+		Thread thread = new Thread()
 	    {
 			public void run()
-			{
+			{				
 				for(int i = 4; i > 0; i--) 
 				{
-					try 
-					{
-						Thread.sleep(10000); // СМЕНИТЬ НА 300000
-					}
-					catch (InterruptedException e) 
-					{
+					try {
+						Thread.sleep(5000); // СМЕНИТЬ НА 300000
+					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
+					
 					int result = i * 5 - 5;
 					if(result == 0)
-						handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] Регистрация завершена!");
+						handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] Регистрация на экзамен завершена!");
 					else
-						handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] У вас осталось " + result + " минут!");
+						handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] На регистрацию осталось " + result + " минут!");
 				}	
 				
 				if(handler.getMembers().size() < 3) // изменить на 16
 				{
 					handler.messageForFew(Bukkit.getOnlinePlayers(), ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "[Exams][INFO] Экзамен отменен, недостаточное количество участников!");
-					canStart = true;
+					setDefaults();
 					return;
 				} 
-				if(handler.getExam() == "chunin") 
-				{	
-					try {
-						chunins.startinChuninExam();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-				else if(handler.getExam() == "genin") 
-				{
-					genins.startinGeninExam();
-				}
+			    
+			    switch(handler.getExam()) 
+			    {
+			    case "chunin":
+			    	chunins.startinChuninExam();
+			    	break;
+			    case "genin":
+			    	genins.startinGeninExam();
+			    	break;
+			    default: break;
+			    }
+				
+				currentThread().interrupt();
 			}
-	    }; cd.start();
+	    }; thread.start();
 	}
 	
 	@Command(aliases = { "register" }, desc = "registers to exam", usage = "<exams> - register to the exam <exam>", min = 0) // описание изменить
 	public static void registerinToExams(CommandContext args, CommandSender sender) 
 	{
-		Player player = (Player)sender;
+		
+		Player player = (Player)sender;			
 		String nick = player.getName();
 		String permission = "";
 		
-		if(handler.getExam() == "genin") 
+		if(handler.getExam().equals("genin")) 
 		{
 			permission = "com.narutocraft.academyStudent";
 		}
-		else if(handler.getExam() == "chunin") 
+		else if(handler.getExam().equals("chunin")) 
 		{
 			permission = "com.narutocraft.genin";
 		}
@@ -129,7 +143,7 @@ public class ExamsNestedCommands {
 		
 		for(String teammateNick : handler.getTeam(nick)) 
 		{
-			if(Bukkit.getPlayer(teammateNick) == null) 
+			if(Bukkit.getPlayer(teammateNick).equals(null)) 
 			{
 				handler.message(player, ChatColor.RED + "[Exams][ERROR] Кто-то из вашей команды не в сети!");
 				return;
@@ -145,19 +159,25 @@ public class ExamsNestedCommands {
 				return;
 			}
 		}
-		if(handler.getStage() == 0 && handler.getExam() != "") 
+		
+		for(String teammateNick : handler.getTeam(nick)) 
 		{
-			for(String teammateNick : handler.getTeam(nick)) 
-			{
-				try {
-					handler.addMember(teammateNick);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				handler.message(teammateNick, ChatColor.GREEN + "[Exams][INFO] Вы успешно зарегистрированы на экзамен!");
+			try {
+				handler.addMember(teammateNick);
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-			handler.addLeader(nick);
+			handler.message(teammateNick, ChatColor.GREEN + "[Exams][INFO] Вы успешно зарегистрированы на экзамен!");
 		}
+		
+		handler.addLeader(nick);
+		
+		for(Player p : Bukkit.getOnlinePlayers()) 
+		{
+			for(String s : handler.getMembers())
+				p.sendMessage(s);
+		}
+		
 	}
 	
 	@Command(aliases = { "answer" }, desc = "registers to exam", usage = "<exams> - answerin the question <answer>", min = 0) // описание изменить
@@ -166,28 +186,20 @@ public class ExamsNestedCommands {
 		Player player = (Player) sender;
 		String nick = player.getName();
 		
-		System.out.println("1");
-		player.sendMessage("suck");
-		
 		if(handler.getStage() == 1) 
 		{
-			System.out.println("2");
-			player.sendMessage("my");
 			if(!handler.getMembers().contains(nick)) 
 			{
-				player.sendMessage("cock");
 				handler.message(player, ChatColor.RED + "[Exams][ERROR] Вы не участвуете в экзамене");
 				return;
 			}
-			else if(handler.getAnswer(nick) != "") 
+			else if(!handler.getAnswer(nick).equals("")) 
 			{
-				player.sendMessage("potato");
 				handler.message(player, ChatColor.RED + "[Exams][INFO] Вы уже ответили на вопрос!");
 				return;
 			}
-			else if(handler.getAnswer(nick) == "")
+			else if(handler.getAnswer(nick).equals(""))
 			{
-				player.sendMessage("who");
 				handler.setAnswer(nick, args.getString(0));
 				handler.message(player, ChatColor.GOLD + "[Exams][INFO] Ваш ответ - " + handler.getAnswer(nick));
 			}
@@ -196,7 +208,7 @@ public class ExamsNestedCommands {
 		handler.message(player, ChatColor.RED + "[Exams][ERROR] Сейчас не проходит первый этап экзамена!");
 	}
 	
-	// КОМАНДЫ ДЛЯ УДОБСТВА
+/*	// КОМАНДЫ ДЛЯ УДОБСТВА
 	
 	@Command(aliases = { "gm" }, desc = "registers to exam", usage = "<exam> - register to the exam <exam>", min = 0) // описание изменить
 	public static void gamemode(CommandContext args, CommandSender sender) 
@@ -323,5 +335,5 @@ public class ExamsNestedCommands {
 		handler.setStage(1);
 		((Player)sender).sendMessage("" + handler.getStage());	
 		((Player)sender).sendMessage("completed.");	
-	}
+	} */
 }
