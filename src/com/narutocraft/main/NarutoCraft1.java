@@ -10,15 +10,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.narutocraft.banks.NationalBank;
-import com.narutocraft.duels.DuelsHandler;
-import com.narutocraft.duels.DuelsNestedCommands;
 import com.narutocraft.events.EventsHandler;
 import com.narutocraft.exams.ExamsCommands;
 import com.narutocraft.exams.ExamsHandler;
-import com.narutocraft.exams.ExamsNestedCommands;
 import com.narutocraft.exp.ExpListener;
-import com.narutocraft.hospital.HospitalHandler;
 import com.narutocraft.network.PacketHandlerPlugin;
 import com.narutocraft.network.PacketManager;
 import com.narutocraft.police.PoliceThread;
@@ -27,8 +22,6 @@ import com.narutocraft.stats.ConfigListener;
 import com.narutocraft.util.ChangeLang;
 import com.narutocraft.util.Commands;
 import com.narutocraft.util.RegisterHandlers;
-import com.narutocraft.wallet.WalletHandler;
-import com.narutocraft.wallet.WalletNestedCommands;
 import com.sk89q.bukkit.util.CommandsManagerRegistration;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
@@ -45,16 +38,6 @@ public class NarutoCraft1 extends JavaPlugin {
 	public EventsHandler eventsHandler;
 	
 	public ReportHandler reportHandler;
-	
-	public ExamsHandler examsHandler;
-	
-	public DuelsHandler duelsHandler;
-	
-	public WalletHandler walletHandler;
-	
-	public NationalBank bankHandler;
-	
-	public HospitalHandler hospitalHandler;
 	
 	private CommandsManager<CommandSender> commands;
 	
@@ -82,14 +65,6 @@ public class NarutoCraft1 extends JavaPlugin {
 	    
 	    reportHandler = new ReportHandler(this);
 	    
-	    hospitalHandler = new HospitalHandler(this);
-	    
-	    walletHandler = WalletNestedCommands.handler;
-	    
-	    duelsHandler = DuelsNestedCommands.handler;
-	    
-	    examsHandler = ExamsNestedCommands.handler; // ТОТ САМЫЙ КАСТЫЛЬ
-	    
 	    RegisterHandlers.register();
 	    
 	    registerCommands();
@@ -98,13 +73,7 @@ public class NarutoCraft1 extends JavaPlugin {
 	    
 	    Bukkit.getPluginManager().registerEvents(new ExpListener(), this);
 	    
-	    Bukkit.getPluginManager().registerEvents(hospitalHandler, this);
-	    
-	    Bukkit.getPluginManager().registerEvents(walletHandler, this);
-	    
-	    Bukkit.getPluginManager().registerEvents(duelsHandler, this);
-	    
-	    Bukkit.getPluginManager().registerEvents(examsHandler, this); // Bukkit.getPluginManager().registerEvents(new ExamsHandler(), this);
+	    Bukkit.getPluginManager().registerEvents(new ExamsHandler(), this);
 	    
 	    if(!new File(getDataFolder() + File.separator + "players").exists())
 	    {

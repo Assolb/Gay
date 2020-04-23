@@ -42,6 +42,6 @@ public class ExpListener implements Listener{
 	@EventHandler
 	public void ubb(PlayerInteractEvent e)
 	{
-		NarutoCraft1.handler.sendPacketToPlayer(e.getPlayer(), new S0PacketSendTitle("–°–ê–°–£", -1));
+		NarutoCraft1.handler.sendPacketToPlayer(e.getPlayer(), new S0PacketSendTitle("—¿—”", -1));
 	}
 }

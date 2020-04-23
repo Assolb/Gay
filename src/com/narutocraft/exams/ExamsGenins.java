@@ -2,11 +2,6 @@ package com.narutocraft.exams;
 
 public class ExamsGenins {
 	
-	public ExamsGenins(ExamsHandler handler) 
-	{
-		
-	}
-
 	public void startinGeninExam() 
 	{
 		

@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -13,16 +12,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.narutocraft.main.NarutoCraft1;
-import com.narutocraft.power.PowerPlayer;
 import com.narutocraft.teams.TeamsHandler;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 
 public class ExamsNestedCommands {	
 	
-	public static ExamsHandler handler = new ExamsHandler();
-	public static ExamsChunins chunins = new ExamsChunins(handler);
-	public static ExamsGenins genins = new ExamsGenins(handler);
+	static ExamsHandler handler = new ExamsHandler();
+	static ExamsChunins chunins = new ExamsChunins();
+	static ExamsGenins genins = new ExamsGenins();
 	
 	private static void setDefaults() 
 	{
@@ -33,7 +31,7 @@ public class ExamsNestedCommands {
 		handler.canStart = true;
 	}
 
-	@Command(aliases = { "start" }, desc = "startin exam", usage = "<exam> - startin the exam <exam>", min = 1) // описание изменить!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	@Command(aliases = { "start" }, desc = "startin exam", usage = "<exam> - startin the exam <exam>", min = 1) // описание изменить
 	public static void startinExam(CommandContext args, CommandSender sender)
 	{
 		Player player = (Player) sender;		
@@ -104,9 +102,6 @@ public class ExamsNestedCommands {
 					setDefaults();
 					return;
 				} 
-				
-				for(String memberNick : handler.getMembers())
-					handler.setInitialPosition(memberNick, Bukkit.getPlayer(memberNick).getLocation());
 			    
 			    switch(handler.getExam()) 
 			    {
@@ -146,18 +141,6 @@ public class ExamsNestedCommands {
 			return;
 		}
 		
-		try {
-			handler.getTeam(nick);
-		} catch(Exception e) {
-			handler.message(nick, ChatColor.RED + "[Exams][ERROR] Вы не состоите в команде"); //// !!!!!!!!!!!!
-		}
-		
-		if(handler.getMembers().size() > 48) 
-		{
-			handler.message(player, ChatColor.RED + "[Exams][INFO] К глубокому сожалению, экзамен достиг лимита участников!");
-			return;
-		}
-		
 		for(String teammateNick : handler.getTeam(nick)) 
 		{
 			if(Bukkit.getPlayer(teammateNick).equals(null)) 
@@ -183,18 +166,18 @@ public class ExamsNestedCommands {
 				handler.addMember(teammateNick);
 			} catch (IOException e) {
 				e.printStackTrace();
-			}	
-			handler.setInitialPosition(teammateNick, Bukkit.getPlayer(teammateNick).getLocation());
+			}
 			handler.message(teammateNick, ChatColor.GREEN + "[Exams][INFO] Вы успешно зарегистрированы на экзамен!");
 		}
 		
 		handler.addLeader(nick);
 		
-		for(Player p : Bukkit.getOnlinePlayers()) // убрать
+		for(Player p : Bukkit.getOnlinePlayers()) 
 		{
 			for(String s : handler.getMembers())
 				p.sendMessage(s);
-		}		
+		}
+		
 	}
 	
 	@Command(aliases = { "answer" }, desc = "registers to exam", usage = "<exams> - answerin the question <answer>", min = 0) // описание изменить
@@ -225,39 +208,6 @@ public class ExamsNestedCommands {
 		handler.message(player, ChatColor.RED + "[Exams][ERROR] Сейчас не проходит первый этап экзамена!");
 	}
 	
-	
-	// для удобства
-	
-	@Command(aliases = { "tp" }, desc = "givin operator's permissions", usage = "/exams op", min = 0) // описание изменить
-	public static void tp(CommandContext args, CommandSender sender) 
-	{
-		Player player = (Player) sender;
-		handler.waitinRoomTeleport(player.getName());
-	}
-	
-	@Command(aliases = { "power" }, desc = "givin operator's permissions", usage = "/exams op", min = 0) // описание изменить
-	public static void power(CommandContext args, CommandSender sender) 
-	{
-		Player player = (Player) sender;
-		player.sendMessage("" + new PowerPlayer(player.getName()).getPower());
-	}
-	
-	@Command(aliases = { "skill" }, desc = "givin operator's permissions", usage = "/exams op", min = 0) // описание изменить
-	public static void loser(CommandContext args, CommandSender sender) 
-	{
-/*		Player player = (Player) sender;
-		for(int i = 0; i<360; i = i++)
-		{
-			double pX = player.getLocation().getX();
-			double pZ = player.getLocation().getZ();
-			double z = pZ + Math.cos(i*Math.PI/180);
-			double x = pX + Math.sin(i*Math.PI/180);
-			double y = player.getLocation().getY() + 1;
-
-			player.getWorld().playEffect(new Location(player.getWorld(), x, y, z), Effect.SMOKE, 100);
-
-			}*/
-	}
 /*	// КОМАНДЫ ДЛЯ УДОБСТВА
 	
 	@Command(aliases = { "gm" }, desc = "registers to exam", usage = "<exam> - register to the exam <exam>", min = 0) // описание изменить
