@@ -45,17 +45,16 @@ public class ExpForTime {
         		try {
 					handler.config.addExp((10 * gotCount == 0 ? 10 : 10 * gotCount > 250 ? 250 : gotCount * 10));
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
-        		Bukkit.getPlayer(handler.config.namePlayer).sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.AQUA + "Вы успешно получили " + ChatColor.GOLD + (10 * gotCount == 0 ? 10 : 10 * gotCount) + ChatColor.AQUA + " опыт(а) за продолжительное нахождение на сервере, продолжайте в том же духе!");
+        		Bukkit.getPlayer(handler.config.namePlayer).sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.AQUA + "Р’С‹ СѓСЃРїРµС€РЅРѕ РїРѕР»СѓС‡РёР»Рё " + ChatColor.GOLD + (10 * gotCount == 0 ? 10 : 10 * gotCount) + ChatColor.AQUA + " РѕРїС‹С‚(Р°) Р·Р° РїСЂРѕРґРѕР»Р¶РёС‚РµР»СЊРЅРѕРµ РЅР°С…РѕР¶РґРµРЅРёРµ РЅР° СЃРµСЂРІРµСЂРµ, РїСЂРѕРґРѕР»Р¶Р°Р№С‚Рµ РІ С‚РѕРј Р¶Рµ РґСѓС…Рµ!");
 				lastGetting = lastActivity;
 				gotCount++;
         		return;
         	}
         	
-        	Bukkit.getPlayer(handler.config.namePlayer).sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.AQUA + "Вы долгое время находились в AFK режиме, опыт за время нахождения на сервере не получен");
+        	Bukkit.getPlayer(handler.config.namePlayer).sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.AQUA + "Р’С‹ РґРѕР»РіРѕРµ РІСЂРµРјСЏ РЅР°С…РѕРґРёР»РёСЃСЊ РІ AFK СЂРµР¶РёРјРµ, РѕРїС‹С‚ Р·Р° РІСЂРµРјСЏ РЅР°С…РѕР¶РґРµРЅРёСЏ РЅР° СЃРµСЂРІРµСЂРµ РЅРµ РїРѕР»СѓС‡РµРЅ");
         	lastGetting = lastActivity;
         }
 	}}

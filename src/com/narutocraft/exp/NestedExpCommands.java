@@ -45,7 +45,7 @@ public class NestedExpCommands {
 			
 			else 
 			{
-				p.sendMessage(ChatColor.RED + "[ERROR] Игрок " + ChatColor.GOLD + args.getString(0) + ChatColor.RED + " не существует");
+				p.sendMessage(ChatColor.RED + "[ERROR] РРіСЂРѕРє " + ChatColor.GOLD + args.getString(0) + ChatColor.RED + " РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚");
 				return;
 			}
 		}
@@ -62,7 +62,7 @@ public class NestedExpCommands {
 				
 				if(type == SenderType.PLAYER)
 				{
-					p.sendMessage(ChatColor.RED + "[ERROR] Игрок " + ChatColor.GOLD + args.getString(0) + ChatColor.RED + " не в сети");
+					p.sendMessage(ChatColor.RED + "[ERROR] РРіСЂРѕРє " + ChatColor.GOLD + args.getString(0) + ChatColor.RED + " РЅРµ РІ СЃРµС‚Рё");
 					return;
 				}
 				return;
@@ -87,10 +87,10 @@ public class NestedExpCommands {
 			
 			if(type == SenderType.PLAYER)
 			{
-				p.sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.GREEN + "Игрок " + ChatColor.GOLD + args.getString(0) + ChatColor.GREEN + " успешно получил очки опыта");
+				p.sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.GREEN + "РРіСЂРѕРє " + ChatColor.GOLD + args.getString(0) + ChatColor.GREEN + " СѓСЃРїРµС€РЅРѕ РїРѕР»СѓС‡РёР» РѕС‡РєРё РѕРїС‹С‚Р°");
 			}
 			
-			Bukkit.getPlayer(args.getString(0)).sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.GREEN + (type == SenderType.OTHER ? "NPC " : "Администратор ") + ChatColor.GOLD + (type == SenderType.PLAYER ? p.getName() : "CONSOLE") + "выдал вам " + ChatColor.GOLD + args.getInteger(1) + ChatColor.GREEN + " очков опыта");
+			Bukkit.getPlayer(args.getString(0)).sendMessage(ChatColor.GOLD + "[INFO] " + ChatColor.GREEN + (type == SenderType.OTHER ? "NPC " : "РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ ") + ChatColor.GOLD + (type == SenderType.PLAYER ? p.getName() : "CONSOLE") + "РІС‹РґР°Р» РІР°Рј " + ChatColor.GOLD + args.getInteger(1) + ChatColor.GREEN + " РѕС‡РєРѕРІ РѕРїС‹С‚Р°");
 			
 		} 
 		catch (NumberFormatException e) 
@@ -128,7 +128,7 @@ public class NestedExpCommands {
 			
 			else 
 			{
-				p.sendMessage(ChatColor.RED + "[ERROR] Игрок " + ChatColor.GOLD + args.getString(0) + ChatColor.RED + " не существует");
+				p.sendMessage(ChatColor.RED + "[ERROR] РРіСЂРѕРє " + ChatColor.GOLD + args.getString(0) + ChatColor.RED + " РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚");
 				return;
 			}
 		}

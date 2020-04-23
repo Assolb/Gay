@@ -1,7 +1,10 @@
 package com.narutocraft.util;
 
+import com.narutocraft.banks.NationalBank;
+import com.narutocraft.duels.DuelsHandler;
 import com.narutocraft.events.EventsHandler;
 import com.narutocraft.exams.ExamsHandler;
+import com.narutocraft.hospital.HospitalHandler;
 import com.narutocraft.report.ReportHandler;
 import com.narutocraft.society.Society;
 import com.narutocraft.stats.ConfigPlayer;
@@ -27,5 +30,11 @@ public class RegisterHandlers {
 	    Lang.enablePlugin();
 	    
 	    ReportHandler.enablePlugin();
+	    
+	    DuelsHandler.enablePlugin();
+	    
+	    NationalBank.enablePlugin();
+	    
+	    HospitalHandler.enablePlugin();
 	}
 }

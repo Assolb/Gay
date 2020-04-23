@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.narutocraft.donate.NestedDonateCommand;
+import com.narutocraft.duels.DuelsNestedCommands;
 import com.narutocraft.events.NestedEventsCommands;
 import com.narutocraft.exp.NestedExpCommands;
 import com.narutocraft.report.NestedReportCommands;
@@ -17,6 +18,9 @@ import com.narutocraft.society.Society;
 import com.narutocraft.teams.NestedTeamCommands;
 import com.narutocraft.teams.Team;
 import com.narutocraft.teams.TeamsHandler;
+import com.narutocraft.village.KageNestedCommands;
+import com.narutocraft.village.MissionsNestedCommands;
+import com.narutocraft.wallet.WalletNestedCommands;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.NestedCommand;
@@ -43,6 +47,26 @@ public class Commands {
 	@Command(aliases = {"society"}, desc = "Society managements commands")
 	@NestedCommand(NestedSocietyCommands.class)
 	public static void society(CommandContext args, CommandSender sender)
+	{}
+	
+	@Command(aliases = {"duel"}, desc = "Duel system")
+	@NestedCommand(DuelsNestedCommands.class)
+	public static void duel(CommandContext args, CommandSender sender)
+	{}
+	
+	@Command(aliases = {"wallet"}, desc = "Duel system")
+	@NestedCommand(WalletNestedCommands.class)
+	public static void wallet(CommandContext args, CommandSender sender)
+	{}
+	
+	@Command(aliases = {"village"}, desc = "Duel system")
+	@NestedCommand(KageNestedCommands.class)
+	public static void village(CommandContext args, CommandSender sender)
+	{}
+	
+	@Command(aliases = {"mission"}, desc = "Duel system")
+	@NestedCommand(MissionsNestedCommands.class)
+	public static void mission(CommandContext args, CommandSender sender)
 	{}
 	
 	@Command(aliases = {"sc"}, desc = "Chat of members of society")

@@ -2,100 +2,182 @@ package com.narutocraft.village;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import com.narutocraft.banks.NationalBank;
 import com.narutocraft.main.NarutoCraft1;
 
-public abstract class Village {
+public class Village {
 	
-	public File file;
-	public FileConfiguration config;
+	public static File file;
+	public static FileConfiguration config;
 	
-	public String name;
-	public EnumVillages village;
+	public static String village;
 	
-	public Village(String name)
-	{
-		file = new File(NarutoCraft1.get().getDataFolder() + File.separator + "villages" + File.separator + name + ".yml");
-		
-		config = YamlConfiguration.loadConfiguration(file);
-		
-		this.name = name;
-		
-	}
+	public static NationalBank bank = new NationalBank(village);
 	
 	public static void enablePlugin()
 	{
-		if(!new File(NarutoCraft1.get().getDataFolder() + File.separator + "villages").exists())
+		file = new File(NarutoCraft1.get().getDataFolder() + File.separator + "villages.yml");      
+		if(!file.exists())
 		{
-			new File(NarutoCraft1.get().getDataFolder() + File.separator + "villages").mkdir();
+			NarutoCraft1.get().saveResource("villages.yml", false);
+			config = YamlConfiguration.loadConfiguration(file);
+			
+			config.createSection("villages");
+			config.createSection("treasures");	
+			config.createSection("kages");	
+			config.createSection("villagers");
+			config.createSection("diplomacy");
+			config.createSection("kageOffers");
+			
+			try {
+				config.save(file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+		else config = YamlConfiguration.loadConfiguration(file);
 		
-		
-	}
-	
-	public boolean checkExists()
-	{
-		return file.exists();
-	}
-	
-	public void create() throws IOException
-	{
-		file.createNewFile();
-		
-		config.createSection("village");
-			config.set("village.name", name);
-			config.set("village.coffer", 0);
-			config.set("village.kage", "none");
-		config.createSection("village.anbu");
-			config.createSection("village.anbu.members");
-			config.set("village.anbu.coffer", 0);
-			config.createSection("village.anbu.missions");
-			//config.createSection("village.anbu.missions.ID");
-			//config.set("village.anbu.missions.jksk.type", "kill");
-			//config.set("village.anbu.missions.jksk.player", <player>);
-			//config.set("village.anbu.missions.jksk.reward", <money>);
-		config.createSection("village.anbu.current-missions");
-		config.save(file);
-	}
-	
-	public int getCoffer()
-	{
-		return config.getInt("village.coffer");
-	}
-	
-	public void consumeFromCoffer(int amount)
-	{
-		config.set("village.coffer", getCoffer() - amount < 0 ? 0 : getCoffer() - amount);
-		try 
+		for(String village : config.getStringList("villages")) 
 		{
+			if(!config.getStringList("treasures").contains(village)) 
+			{
+				config.set("treasures." + village + ".money", 1000000);
+				config.set("treasures." + village + ".equipment", 0);
+				config.set("treasures." + village + ".food", 0);
+				config.set("treasures." + village + ".fossils", 0);
+			}
+		}
+			
+		try {
 			config.save(file);
-		} 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 		
-		catch (IOException e) 
-		{
+	public Village(String village) 
+	{
+		this.village = village;
+	}
+
+	public double getResourceFromTreasure(String resource)
+	{		
+		return config.getDouble("treasures." + village + "." + resource);
+	}
+	
+	public void addResourceToTreasure(String resource, double count) 
+	{
+		config.set("treasures." + village + "." + resource, getResourceFromTreasure(resource) + count);
+		
+		try {
+			config.save(file);
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public String getKage()
+	public boolean removeResourceFromTreasure(String resource, double count) 
 	{
-		return config.getString("village.kage");
-	}
-	
-	public void addToCoffer(int amount)
-	{
-		config.set("village.coffer", getCoffer() + amount);
-		try 
-		{
-			config.save(file);
-		} 
+		if(getResourceFromTreasure(resource) - count < 0)
+			return false;		
 		
-		catch (IOException e) 
-		{
+		config.set("treasures." + village + "." + resource, getResourceFromTreasure(resource) - count);
+		
+		try {
+			config.save(file);
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		return true;
+	}
+	
+	public String getKage() 
+	{
+		return config.getString("kages." + village);
+	}
+	
+	public void setKage(String nick) 
+	{
+		config.set("kages." + village, nick);
+		try {
+			config.save(file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void registerVillager(String nick) 
+	{
+		bank.createAccount(nick);
+		removeResourceFromTreasure("money", 1000);
+		bank.addMoneyOnAccount(nick, "ien", 1000);
+		config.set("villagers." + village, nick);
+		try {
+			config.save(file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public boolean tradeWithVillage(String secondVillage, String firstVillageResource, String secondVillageResource, double firstVillageResourceCount, double secondVillageResourceCount) 
+	{
+		if(config.getDouble("treasury." + village + "." + firstVillageResource) >= firstVillageResourceCount) 
+		{
+			if(config.getDouble("treasury." + secondVillage + "." + secondVillageResource) >= secondVillageResourceCount) 
+			{
+				final int size = config.getStringList("kageOffers." + secondVillage).size();
+				config.set("kageOffers." + secondVillage + "." + size + ".offerType", "trade");
+				config.set("kageOffers." + secondVillage + "." + size + ".givingVillage", this.village);
+				config.set("kageOffers." + secondVillage + "." + size + ".givingVillageResource", firstVillageResource);
+				config.set("kageOffers." + secondVillage + "." + size + ".receivingVillageResource", secondVillageResource);
+				config.set("kageOffers." + secondVillage + "." + size + ".givingVillageResource", firstVillageResourceCount);
+				config.set("kageOffers." + secondVillage + "." + size + ".receivingVillageResource", secondVillageResourceCount);
+				
+				try {
+					config.save(file);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				return true;
+			}
+		}		
+		return false;
+	}
+	
+	public void setDiplomacy(String village, String diplomacy) 
+	{
+		for(String diplomacyType : config.getStringList("diplomacy." + this.village)) 
+		{
+			if(config.getStringList("diplomacy." + this.village + "." + diplomacyType).contains(village))
+				config.set("diplomacy." + this.village + "." + diplomacyType, config.getStringList("diplomacy." + this.village + "." + diplomacyType).remove(village));
+		}
+		
+		config.set("diplomacy." + this.village + "." + diplomacy, config.getStringList("diplomacy." + this.village + "." + diplomacy).add(village));
+		
+		try {
+			config.save(file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public String getDiplomacy(String village) 
+	{
+		for(String diplomacyType : config.getStringList("diplomacy." + this.village)) 
+		{
+			if(config.getStringList("diplomacy." + this.village + "." + diplomacyType).contains(village))
+				return diplomacyType;
+		}
+		
+		return null;
 	}
 }

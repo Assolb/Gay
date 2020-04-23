@@ -23,10 +23,12 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.narutocraft.main.NarutoCraft1;
+import com.narutocraft.network.S0PacketSendTitle;
 import com.narutocraft.teams.TeamsHandler;
 
 public class ExamsHandler implements Listener {
@@ -41,15 +43,22 @@ public class ExamsHandler implements Listener {
 	public boolean canStart = true;
 	
 	public Map<String, String> answer = new HashMap<String, String>();
+	public Map<String, Location> initialPositions = new HashMap<String, Location>();
 	
 	public static File file;
 	public static FileConfiguration config;
 	
-	static ExamsChunins chunins;
+	public ExamsChunins chunins;
+
+	public ExamsHandler() {}
 	
+	public void setChunins(ExamsChunins chunins) 
+	{
+		this.chunins = chunins;
+	}
+
 	public static void enablePlugin()
 	{
-		chunins = new ExamsChunins();
 		file = new File(NarutoCraft1.get().getDataFolder() + File.separator + "examsPositions.yml");      // ПОЧЕКАТЬ ЧТО С КОРДАМИ БАШНИ
 		if(!file.exists())
 		{
@@ -73,6 +82,33 @@ public class ExamsHandler implements Listener {
 			}
 		}
 		else config = YamlConfiguration.loadConfiguration(file);	
+	}
+	
+	/*public void messageOnScreen(String nick, String message) 
+	{
+		NarutoCraft1.handler.sendPacketToPlayer(Bukkit.getPlayer(nick), new S0PacketSendTitle(message, -1));
+	}
+	
+	public void messageOnScreenForFew(List<String> nicks, String message) 
+	{
+		for(String nick : nicks)
+			NarutoCraft1.handler.sendPacketToPlayer(Bukkit.getPlayer(nick), new S0PacketSendTitle(message, -1));
+	}*/
+	
+	public void setInitialPosition(String nick, Location location) 
+	{
+		initialPositions.put(nick, location);
+	}
+	
+	public Location getInitialPosition(String nick) 
+	{
+		return initialPositions.get(nick);
+	}
+	
+	public void teleportInitialPosition(String nick) 
+	{
+		message(nick, ChatColor.GREEN + "[Exams][INFO] Вас вернули на место, где вы были до экзамена");
+		Bukkit.getPlayer(nick).teleport(getInitialPosition(nick));
 	}
 	
 	public void setStage(int stage) 
@@ -110,7 +146,7 @@ public class ExamsHandler implements Listener {
 		return winners;
 	}
 	
-	public String getWinners(int index) 
+	public String getWinner(int index) 
 	{
 		return winners.get(index);
 	}
@@ -137,39 +173,82 @@ public class ExamsHandler implements Listener {
 	
 	public void addWinner(String winner) throws IOException
 	{
-		winners.add(winner);
-		waitinRoomTeleport(winner);
+		if(!getWinners().contains(winner)) 
+		{
+			winners.add(winner);
+			if(getStage() == 3) 
+			{
+				teleportInitialPosition(winner); // 
+				getMembers().remove(winner);
+			}
+			else if(getStage() < 3 && getStage() > 0) 
+			{
+				if(!getLosers().isEmpty())
+					waitinRoomTeleport(winner);
+				else
+					teleportInitialPosition(winner);
+			}
+		}
 	}
 	
 	public void addWinners(List<String> team) throws IOException
 	{
 		for(String winnerNick : team) 
 		{
-			winners.add(winnerNick);
-			waitinRoomTeleport(winnerNick);
+			if(!getWinners().contains(winnerNick)) 
+			{
+				winners.add(winnerNick);
+				if(getStage() == 3) 
+				{
+					teleportInitialPosition(winnerNick); // 
+					getMembers().remove(winnerNick);
+				}
+				else if(getStage() < 3 && getStage() > 0) 
+				{
+					if(!getLosers().isEmpty()) 
+					{
+						waitinRoomTeleport(winnerNick);
+					}
+					else
+					{
+						getMembers().remove(winnerNick);
+						teleportInitialPosition(winnerNick);
+					}
+				}
+			}
 		}
 	}
 	
 	public void addLoser(String loser) throws IOException
 	{
-		if(getStage() != 3) 
+		if(getLosers().contains(loser))
+			return;
+		if(getStage() < 3 && getStage() > 0) 
 		{
 			for(String teammateNick : getTeam(loser)) 
 			{
+				losers.add(teammateNick);
+				message(teammateNick, ChatColor.RED + "" + ChatColor.BOLD + "[Exams][INFO] Вы были исключены с экзамена!");
+				
 				if(leaders.contains(teammateNick)) 
 					leaders.remove(teammateNick);
-				losers.add(teammateNick);
 				if(members.contains(teammateNick))
 					members.remove(teammateNick);
+			
+				teleportInitialPosition(teammateNick);
 			}
 		}
 		else 
 		{
-			if(leaders.contains(loser)) 
-				leaders.remove(loser);
 			losers.add(loser);
+			message(loser, ChatColor.RED + "" + ChatColor.BOLD + "[Exams][INFO] Вы были исключены с экзамена!");
+			
+			if(leaders.contains(loser)) 
+				leaders.remove(loser);			
 			if(members.contains(loser))
 				members.remove(loser);
+
+			teleportInitialPosition(loser);
 		}
 	}
 	
@@ -255,7 +334,7 @@ public class ExamsHandler implements Listener {
 	
 	public void stageTeleport() throws IOException
 	{
-		if(members.isEmpty()) 
+		if(getMembers().isEmpty()) 
 		{
 			System.out.println("members are empty");
 			return;
@@ -275,8 +354,15 @@ public class ExamsHandler implements Listener {
 			}
 			break;
 		case 3:
-			for(int i = 0; i < getMembers().size(); i++)
+			for(int i = 0; i < getMembers().size(); i++) 
+			{
+				if(config.getStringList("chunin.3").size() < getMembers().size()) 
+				{
+					if(i == getMembers().size() - 1) 
+						i = 0;
+				}
 				teleport(parsin(config.getStringList("chunin.3").get(i)), getMember(i));
+			}
 			break;
 		default: break;
 		}
@@ -292,13 +378,14 @@ public class ExamsHandler implements Listener {
 	
 	public void waitinRoomTeleport(String nick) 
 	{
-		teleport(parsin(config.getString("waitinRoom.1")), nick);
+		Bukkit.getPlayer(nick).sendMessage(ChatColor.GREEN + "[Exams][INFO] Вы помещены в комнату ожидания!");
+		teleport(parsin(config.getStringList("waitinRoom.1").get(0)), nick);
 	}
 	
 	public void arenaTeleport() 
 	{
-		for(int i = 0; i < 1; i++)
-			teleport(parsin(config.getString("arena." + i + 1)), chunins.opponents[i]);
+		for(int i = 0; i < chunins.opponents.length; i++) 
+			teleport(parsin(config.getStringList("arena.1").get(i)), chunins.opponents[i]);
 	}
 	
 	public void messageForFew(List<String> list, String message) 
@@ -331,48 +418,47 @@ public class ExamsHandler implements Listener {
 	
 	@EventHandler
 	public void onDeath(PlayerDeathEvent event) throws IOException 
-	{
-		Player player = event.getEntity();
-		String nick = player.getName();
-		
-		if(player instanceof Player) 
+	{		
+		if(getStage() != 0 ) 
 		{
-			if(getStage() == 1 || getStage() == 2) 
+			if(event.getEntity() instanceof Player) 
 			{
-				if(members.contains(nick)) 
+				Player player = (Player)event.getEntity();
+				String nick = player.getName();
+				
+				if(getLosers().contains(nick)) 
+					return;
+				
+				if(!getMembers().contains(nick) && chunins.opponents[0] != nick || !getMembers().contains(nick) && chunins.opponents[1] != nick)
+					return;
+				
+				addLoser(nick);
+				
+				if(getStage() == 3) 
 				{
-					for(String teammateNick : getTeam(nick)) 
+					if(chunins.opponents[1].equals(nick)) 
+						addWinner(chunins.opponents[0]);
+					
+					else if(chunins.opponents[0].equals(nick)) 
+						addWinner(chunins.opponents[1]);
+					
+					return;
+				}
+				
+				for(String teammateNick : getTeam(nick)) 
+				{
+					Player teammate = Bukkit.getPlayer(teammateNick);
+					if(teammate.getInventory().contains(Material.BOOK) || teammate.getInventory().contains(Material.PAPER))		
 					{
-						Player teammate = Bukkit.getPlayer(teammateNick);
-						addLoser(nick);
-						if(teammate.getInventory().contains(Material.BOOK) || teammate.getInventory().contains(Material.PAPER))		
+						for(ItemStack is : teammate.getInventory()) 
 						{
-							for(ItemStack is : teammate.getInventory()) 
+							if(is.getType().equals(Material.BOOK) || is.getType().equals(Material.PAPER)) 
 							{
-								if(is.getType().equals(Material.BOOK) || is.getType().equals(Material.PAPER)) 
-								{
-									teammate.getWorld().dropItem(teammate.getLocation(), is);
-									teammate.getInventory().removeItem(is);
-								}
+								teammate.getWorld().dropItem(teammate.getLocation(), is);
+								teammate.getInventory().removeItem(is);
 							}
 						}
-						if(teammateNick == nick)
-							return;
-						teammate.sendMessage(ChatColor.RED + "[Exams][INFO] Ваш союзник погиб, вы были дисквалифицированы!");
 					}
-				}
-			}
-			else if(getStage() == 3) 
-			{
-				if(chunins.opponents[1].equals(nick)) 
-				{
-					addWinner(chunins.opponents[0]);
-					addLoser(chunins.opponents[1]);
-				}
-				else if(chunins.opponents[0].equals(nick)) 
-				{
-					addWinner(chunins.opponents[1]);
-					addLoser(chunins.opponents[0]);
 				}
 			}
 		}
@@ -426,13 +512,13 @@ public class ExamsHandler implements Listener {
 	}
 	
 	@EventHandler
-	public void playerChatin(AsyncPlayerChatEvent event) 
+	public void playerChatin(AsyncPlayerChatEvent event)  // хули не робишь
 	{
 		Player player = event.getPlayer();
 		if(getStage() == 1 && members.contains(player.getName())) 
 		{
 		    System.out.println(event.getMessage());
-		    player.sendMessage(ChatColor.RED + "[Экзамен] Тихо! А если экзаменатор услышит?");
+		    player.sendMessage(ChatColor.RED + "[Exams][INFO] Тихо! А если экзаменатор услышит?");
 		    event.setCancelled(true);
 		}
 	}
@@ -465,17 +551,183 @@ public class ExamsHandler implements Listener {
 		
 		if(getMembers().contains(nick)) 
 		{
-			player.setHealth(0.0D);
+			addLoser(nick);
 		}
 		else if(chunins.opponents[0].equals(nick)) 
 		{			
-			player.setHealth(0.0D);
+			addLoser(nick);
 			chunins.opponents[0] = "";
 		}
 		else if(chunins.opponents[1].equals(nick))
 		{
-			player.setHealth(0.0D);
+			addLoser(nick);
 			chunins.opponents[1] = "";
+		}
+	}
+	
+	@EventHandler
+	public void playerMovin(PlayerMoveEvent event) 
+	{
+		if(getStage() == 0)
+			return;
+		
+		Player player = event.getPlayer(); // ебануть условия
+		String nick = player.getName();
+		
+		if(!getMembers().contains(nick) && chunins.opponents[0] != nick || !getMembers().contains(nick) && chunins.opponents[1] != nick || !getMembers().contains(nick) && getStage() != 3)
+			return; 
+		
+		Location location = player.getLocation();
+		double radius;
+		int points;
+		Location origin;
+		
+		switch(getStage()) 
+		{
+		case 1:
+			player.sendMessage("виталя 1");
+			if(location.getX() < -744 || location.getX() > -728 || location.getY() > 61 || location.getY() < 53 || location.getZ() > -1085 || location.getZ() < -1100) 
+			{
+				player.sendMessage(getStage() + " че за хуйня");
+				try {
+					addLoser(player.getName());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			break;
+		case 2:
+			player.sendMessage("виталя 2");
+			radius = 201d;
+			points = (int) Math.round(Math.PI * radius);
+			origin = new Location(player.getWorld(), -150, 0, -1069);
+			for (int i = 0; i < points; i++) 
+			{
+			    double angle = 2 * Math.PI * i / points;
+			    Location point = origin.clone().add(radius * Math.sin(angle), 0.0d, radius * Math.cos(angle));
+			    
+			    if(point.getX() < -150) // z -869 -1279 x -350 52 | mid -150 -1069
+			    {
+			    	if(location.getX() < point.getX()) 
+			    	{
+			    		player.sendMessage("1");
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			    else 
+			    {
+			    	if(location.getX() > point.getX()) 
+			    	{
+			    		player.sendMessage("2");
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			    
+			    if(point.getZ() < -1069) 
+			    {
+			    	if(location.getZ() < point.getZ()) 
+			    	{
+			    		player.sendMessage("3");
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			    else 
+			    {
+			    	if(location.getZ() > point.getZ()) 
+			    	{
+			    		player.sendMessage("4");
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			}
+			break;
+		case 3: // Z -1058 -996 X -1274 -1212
+			radius = 62d;
+			points = (int) Math.round(Math.PI * radius);
+			origin = new Location(player.getWorld(), -150, 0, -1069);
+			for (int i = 0; i < points; i++) 
+			{
+			    double angle = 2 * Math.PI * i / points;
+			    Location point = origin.clone().add(radius * Math.sin(angle), 0.0d, radius * Math.cos(angle));
+			    
+			    if(point.getX() < -150) // Z -1058 -996 X -1274 -1212 MID -1243 -1027 
+			    {
+			    	if(location.getX() < point.getX()) 
+			    	{
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			    else 
+			    {
+			    	if(location.getX() > point.getX()) 
+			    	{
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			    
+			    if(point.getZ() < -1069) 
+			    {
+			    	if(location.getZ() < point.getZ()) 
+			    	{
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			    else 
+			    {
+			    	if(location.getZ() > point.getZ()) 
+			    	{
+			    		try {
+							addLoser(nick);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			    	}
+			    }
+			}
+			
+			// доступ на арену
+			if(chunins.opponents[0].equals(nick) || chunins.opponents[1].equals(nick))
+				return;
+			
+			if(location.getX() > 123 && location.getX() < 123 && location.getY() > 123 && location.getZ() > 123 && location.getZ() < 123) 
+			{
+				try {
+					addLoser(nick);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}				
+			}
+			break;			
+		default: 
+			break;
 		}
 	}
 }
